@@ -1,0 +1,281 @@
+extern "C"{
+  #include <naz-linkList.h>
+}
+
+#include <mcp_can.h>
+#include <SPI.h>
+
+extern "C"{
+  typedef struct {
+    uint16_t ID;
+    uint8_t length;
+    uint8_t data[8];
+  } BusMessage;
+}
+
+const int SPI_CAN1CS_PIN = 9;
+const int SPI_CAN2CS_PIN = 8;
+MCP_CAN CAN1(SPI_CAN1CS_PIN);
+LinkedList* msgIndex;
+//MCP_CAN CAN2(SPI_CAN2CS_PIN);
+
+unsigned char BUSMsg28FSetup[8] = {128, 0, 0, 0, 128, 0, 0, 0};
+unsigned char LCDText1[8] = {192,' ',' ',' ','M','a','d',' '};
+unsigned char LCDText2[8] = {135, 'M', 'a', 'z', ' ', ' ', 32, 32};
+unsigned char LCDClear1[8] = {192, 32, 32, 32, 32, 32, 32, 32};
+unsigned char LCDClear2[8] = {135, 32, 32, 32, 32, 32, 32, 32};
+unsigned char BUSMsg28FSetButton[8] = {128, 0, 0, 0, 40, 0, 0, 0};
+unsigned char BUSMsg28FDISOn[8] = {128, 0, 0, 0, 160, 0, 0, 0};
+unsigned char LCDText1DISOn[8] = {192, 32, 68, 73, 83, 32, 79, 78};
+unsigned char temparray[8] = {128, 0, 0, 0, 144, 0, 0, 0};
+
+//Replicate the running car 
+/*
+unsigned char BUSMsg23[1] = {64};
+unsigned char BUSMsg201[8] = {128, 0, 0, 0, 128, 0, 0, 0};
+unsigned char BUSMsg265[2] = {0, 0};
+unsigned char BUSMsg285[3] = {64, 0,0 };
+unsigned char BUSMsg400[8] = {0, 35, 255, 254, 0, 105, 0, 193};
+unsigned char BUSMsg420[8] = {96, 0, 0, 0, 66, 0, 0, 0};
+unsigned char BUSMsg433[8] = {0, 4, 80, 1, 0, 4, 240, 0};
+unsigned char BUSMsg460[8] = {3, 224, 0, 0, 192, 0, 0, 0}; // 10202874
+unsigned char BUSMsg4F3[8] = {49, 48, 50, 48, 50, 56, 55, 52}; // BK10F100
+unsigned char BUSMsg4F4[8] = {66, 75, 49, 48, 70, 49, 48, 48};
+unsigned char BUSMsg4FA[3] = {22, 128, 208};
+unsigned char BUSMsg501[3] = {17, 2, 0};
+unsigned char BUSMsg50C[3] = {1, 2, 0};
+unsigned char BUSMsg511[3] = {1, 18, 0}; */
+unsigned char BUSMsg401[1] = {0};
+
+
+void setup()
+{
+  Serial.begin(115200);
+  msgIndex = linkedListCreate();
+
+
+CAN1START_INIT:
+  if(CAN_OK == CAN1.begin(CAN_125KBPS)){
+    Serial.println("CAN1 INIT OK");
+  } else {
+    Serial.println("CAN1 INIT FAIL");
+    delay(100);
+    goto CAN1START_INIT;
+  }
+/*
+  CAN2START_INIT:
+  if(CAN_OK == CAN2.begin(CAN_125KBPS)){
+    Serial.println("CAN2 INIT OK");
+  } else {
+    Serial.println("CAN2 INIT FAIL");
+    delay(100);
+    goto CAN2START_INIT;
+  } */
+}
+
+void regularSend(){
+  static unsigned int counter = 0;
+  counter++;
+  CAN1.sendMsgBuf(0x28F, 0, 8, BUSMsg28FSetButton);
+  CAN1.sendMsgBuf(0x290, 0, 8, LCDText1);
+  CAN1.sendMsgBuf(0x291, 0, 8, LCDText2);
+}
+
+void dumpToUART(MCP_CAN subjCAN){
+  static int trigger = 0;
+  uint16_t msgID;
+  uint8_t msgLen = 0;
+  uint8_t msg[8];
+  //Serial.print("x");
+  if(CAN_MSGAVAIL == subjCAN.checkReceive())    {
+    subjCAN.readMsgBuf(&msgLen, msg);    // read data,  len: data length, buf: data buf
+    msgID = subjCAN.getCanId();
+    
+    if (trigger == -1 && msgID == 0x28F && msg[4] == 40){
+      trigger = 0;
+      Serial.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+    }
+    if (trigger <= 30 && trigger != -1 /*&& 
+      msgID != 0x023 &&
+      msgID != 0x201 &&
+      msgID != 0x265 &&
+      msgID != 0x285 &&
+      msgID != 0x28F &&
+      msgID != 0x290 &&
+      msgID != 0x291 &&
+      msgID != 0x400 &&
+      msgID != 0x401 &&
+      msgID != 0x420 &&
+      msgID != 0x433 &&
+      msgID != 0x460 &&
+      msgID != 0x4F0 &&
+      msgID != 0x501 &&
+      msgID != 0x50C &&
+      msgID != 0x511 */)
+    {
+      Serial.print(msgID, HEX);
+      Serial.print(":");
+      Serial.print(msgLen);
+      Serial.print(":");
+      if (msgLen >= 1){
+        Serial.print(msg[0]); 
+      }
+      for(int i = 1; i<msgLen; i++)    // print the data
+      {
+        Serial.print(","); 
+        Serial.print(msg[i]);             
+      }
+      if (msgID == 0x290 || msgID == 0x291){
+        Serial.print("|");
+        for(int i = 1; i<msgLen; i++)
+        {
+           Serial.write(msg[i]);
+        }
+        Serial.print("|");
+      }
+      Serial.println();
+      trigger++;
+      //trigger = 0;
+    } if (trigger == 31){
+          Serial.println("END RECORDING");
+          trigger = 0;
+    }
+  }
+}
+
+LinkedListNode *linkedListFind(LinkedList *subjList, uint16_t msgID){
+  boolean looping;
+  uint8_t iterations = 0;
+  BusMessage *subjMsg; 
+  LinkedListNode *retval, *subjNode;
+  uint8_t listSize = linkedListGetSize(subjList);
+  if (listSize == 0){
+    retval =  nullptr;
+  } else {
+    looping = true;
+    subjNode = (*subjList).head;
+    while (looping){
+      subjMsg = (BusMessage*)(*subjNode).data;
+      if ((*subjMsg).ID == msgID){
+        looping = false;
+        retval = subjNode;
+      } else {
+        iterations++;
+        subjNode = (*subjNode).follower;
+        if (subjNode == nullptr){
+          looping = false;
+          retval = nullptr;
+        }
+      }
+    }
+  }
+  /*
+  if (retval != nullptr){
+    Serial.print("Found ");
+    Serial.print(msgID, HEX);
+    Serial.print(":");
+    Serial.println(iterations);
+  } */
+  return retval;
+}
+
+void analyse(MCP_CAN subjCAN, LinkedList *subjList){
+  LinkedListNode *subjNode;
+  BusMessage *subjMsg;
+  boolean changed = false;
+  uint16_t msgID;
+  uint8_t msgLen;
+  uint8_t msg[8];
+  
+  if(CAN_MSGAVAIL == subjCAN.checkReceive())    {
+    subjCAN.readMsgBuf(&msgLen, msg);
+    msgID = subjCAN.getCanId();
+    subjNode = linkedListFind(subjList, msgID);
+    //subjNode = nullptr;
+    if (msgID != 0x290 && msgID != 0x291){
+      if (subjNode != nullptr){
+        subjMsg = (BusMessage*)(*subjNode).data;
+        //Compare the new message with the old one
+        if (msgLen == (*subjMsg).length){ //If it's the same length
+          for (int i = 0; i < msgLen; i++){
+            if (msg[i] != (*subjMsg).data[i]){
+              if (changed == false){
+                Serial.print(" AT:");
+              } else {
+                Serial.print(":");
+              }
+              Serial.print(i);
+              changed = true;
+            }
+          }
+          if (changed){
+            Serial.println();
+            Serial.print("MOD:");
+            Serial.print(msgID, HEX);
+            Serial.print(":");
+            Serial.print(msgLen);
+            if (msgLen > 0){
+              Serial.print(":");
+              Serial.print(msg[0]);
+              (*subjMsg).data[0] = msg[0]; // Update the stored message
+              for (int i = 1; i < msgLen; i++){
+                Serial.print(",");
+                Serial.print(msg[i]);
+                (*subjMsg).data[i] = msg[i];
+              }
+              Serial.println();
+            }
+          }
+        } else {
+          Serial.print("LEN:");
+          Serial.print(msgID, HEX);
+          Serial.print(":");
+          Serial.print(msgLen);
+          Serial.print(", was ");
+          Serial.println((*subjMsg).length);
+          (*subjMsg).length = msgLen;
+        }
+      } else {
+        //Add to list
+        subjMsg = (BusMessage*)calloc(1, sizeof(BusMessage));
+        Serial.print("NEW:");
+        Serial.print(msgID, HEX);
+        (*subjMsg).ID = msgID;
+        
+        Serial.print(":");
+        Serial.print(msgLen);
+        (*subjMsg).length = msgLen;
+        
+        if (msgLen > 0){
+          Serial.print(":");
+          Serial.print(msg[0]);
+          (*subjMsg).data[0] = msg[0];
+          for (int i = 1; i < msgLen; i++){
+            Serial.print(",");
+            Serial.print(msg[i]);
+            (*subjMsg).data[i] = msg[i];
+          }
+        }
+        Serial.println();
+        linkedListAppend(subjList, subjMsg);
+      }
+    }
+  }
+}
+
+void loop(){
+
+  //dumpToUART(CAN1);
+  analyse(CAN1, msgIndex);
+  /*
+  if (notFinished){
+    for (int i = 0; i <= 255; i++){
+      BUSMsg401[0] = i;
+      Serial.print("Writing:");
+      Serial.println(i);
+      CAN1.sendMsgBuf(0x401, 0, 1, BUSMsg401);
+      delay(1000);
+    } 
+    notFinished = true;
+  } */
+}
