@@ -50,6 +50,8 @@ void mazdaBKLCDPrint(MCP_CAN subjCAN, char inStr[], uint8_t formatting){
     LCDMsg2[i+1] = outputText[i+7];
   }
   
+  Serial.println(BUSMsg28F[4]);
+  
   subjCAN.sendMsgBuf(0x28F, 0, 8, BUSMsg28F);
   subjCAN.sendMsgBuf(0x290, 0, 8, LCDMsg1);
   subjCAN.sendMsgBuf(0x291, 0, 8, LCDMsg2);
@@ -57,13 +59,25 @@ void mazdaBKLCDPrint(MCP_CAN subjCAN, char inStr[], uint8_t formatting){
 
 char guessGear(VehicleData carState){
   char retval;
+  int ratio;
   
   if (carState.gearReverse){
     retval = 'R';
   } else if (carState.bodySpeed == 0){
     retval = 'N';
   } else {
-    retval = '?';
+    ratio = carState.engineRPM/(carState.bodySpeed/100);
+    if (ratio > 130 && ratio < 170){
+      retval = '1';
+    } else if (ratio > 70 && ratio < 83){
+      retval = '2';
+    } else if (ratio > 42 && ratio < 47){
+      retval = '3';
+    } else if (ratio > 34 && ratio < 38){
+      retval = '4';
+    } else {
+      retval = '?';
+    }
   }
   
   return(retval);

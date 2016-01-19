@@ -131,9 +131,6 @@ void getData(MCP_CAN subjCAN){
         }
         carState.bodySpeed = (uint16_t)(msg[4]*256 + msg[5]);
         carState.throttlePedal = msg[6];
-        CAN2UART(NULL, msgID, msgLen, msg, false);
-        Serial.print("Speed calculated to be: ");
-        Serial.println(carState.bodySpeed);
         break;
     
       case 0x400 :
