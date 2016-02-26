@@ -1,0 +1,25 @@
+/* Nathaniel Roach */
+
+#ifndef _TYPES_H_
+#define _TYPES_H_
+
+typedef struct {
+  uint16_t ID;
+  uint8_t length;
+  uint8_t data[8];
+} BusMessage;
+
+typedef struct {
+  uint16_t bodySpeed; // 100 = 1km/h; can be negative but not known if signed
+  uint16_t engineRPM;
+  uint8_t throttlePosition; // Actual position of butterfly valve - changes with cruise on
+  uint16_t tripSpeedAvg;
+  uint16_t tripUsageCur; // 22 = 2.2l/100km
+  uint16_t tripUsageAvg;
+  uint16_t tripDistRemain;
+  uint8_t doorState;
+  boolean gearReverse;
+  boolean handbrake;
+} VehicleData;
+
+#endif
