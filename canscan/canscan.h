@@ -7,10 +7,9 @@
 
 //##############################################
 
-const uint8_t displayPage = 4;
-const int SPI_CAN1CS_PIN = 9;
-const int SPI_CAN2CS_PIN = 8;
-#define _INCLUDE_CANFUNC
+//const uint8_t displayPage = 1;
+#define SPI_CAN1CS_PIN 9
+#define SPI_CAN2CS_PIN 8
 #define _WITHANALYSE
 #define _MAZDA3BK
 

@@ -8,12 +8,18 @@
 #include "types.h"
 
 #define _INCLUDE_CANFUNC
-
 #include "canscan.h"
 #include "canfunctions.h"
 
-void mazdaBKLCDPrint(MCP_CAN subjCAN, char inStr[], uint8_t formatting,
-    boolean *analyseActive);
+#define RHEOSTAT_INPUT A0
+#define RHEOSTAT_STEPS 6
+#define RHEOSTAT_RES_MIN 520 // Top of rheostat
+#define RHEOSTAT_RES_MAX 25 // Bottom of rheostat
+
+void getData(DeviceState *settings);
+uint8_t getDesiredPage(uint8_t analogVal);
+void formatScreen(DeviceState *settings);
+void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t formatting);
 char guessGear(VehicleData carState);
 
 #ifdef __cplusplus

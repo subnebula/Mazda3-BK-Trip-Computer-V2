@@ -3,6 +3,9 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+#include <SPI.h>
+#include <mcp_can.h>
+
 typedef struct {
   uint16_t ID;
   uint8_t length;
@@ -12,6 +15,9 @@ typedef struct {
 typedef struct {
   uint16_t bodySpeed; // 100 = 1km/h; can be negative but not known if signed
   uint16_t engineRPM;
+  int8_t engineCoolTemp; // Coolant temp, 50 = 0degc
+  uint8_t engineOilTemp; // oil temp? clears when engine stopped - fuel use perhaps?
+  uint8_t guess3;  // unk, 
   uint8_t throttlePosition; // Actual position of butterfly valve - changes with cruise on
   uint16_t tripSpeedAvg;
   uint16_t tripUsageCur; // 22 = 2.2l/100km
@@ -21,5 +27,11 @@ typedef struct {
   boolean gearReverse;
   boolean handbrake;
 } VehicleData;
+
+typedef struct {
+  boolean analysisEnabled;
+  VehicleData *carState;
+  MCP_CAN *canBus;
+} DeviceState;
 
 #endif
