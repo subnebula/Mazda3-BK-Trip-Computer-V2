@@ -57,7 +57,7 @@ void handleTimer(){
   static uint16_t macroCycles = 0;
   macroCycles++;
 
-  if (macroCycles >= 50){ // Every 100ms
+  if (macroCycles >= 10){ // Every 10ms
     formatScreen(&settings);
     macroCycles = 0;
   } else {

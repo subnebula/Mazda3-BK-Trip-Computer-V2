@@ -39,7 +39,6 @@ void getData(DeviceState *settings){
         break;
 
       case 0x433 :
-        Serial.println(subjMsg.data[0], BIN);
         (*carState).doorState = subjMsg.data[0];
         (*carState).guess3 = subjMsg.data[2];  // engine temp? 1 = .25 degc (MADOX)
         (*carState).handbrake = (subjMsg.data[3] & 1<<0); //0th bit
@@ -74,6 +73,7 @@ void formatScreen(DeviceState *settings){
   }
   VehicleData carState = *(*settings).carState;
   char output[13] = {0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t extras = 0;
   uint8_t formatting = 0;
 
   /*
@@ -112,11 +112,10 @@ void formatScreen(DeviceState *settings){
           sprintf(output, "   MadMaz   ");
         } else {
           if (carState.throttlePosition == 200){ // Wide Open Throttle
-            sprintf(output, "WOT R%04i G%c", carState.engineRPM, guessGear(
-                  carState));
+            sprintf(output, "WOT R%04i %2i", carState.engineRPM, carState.engineCoolTemp);
           } else {
-            sprintf(output, "A%02i R%04i G%c", carState.throttlePosition/2,
-                  carState.engineRPM, guessGear(carState));
+            sprintf(output, "A%02i R%04i %2i", carState.throttlePosition/2,
+                  carState.engineRPM, carState.engineCoolTemp);
           }
         }
         break;
@@ -151,14 +150,25 @@ void formatScreen(DeviceState *settings){
         break;
 
       default :
-        sprintf(output, "Check input");
+        if (carState.engineRPM == 0){
+          sprintf(output, "   MadMaz   ");
+        } else {
+          if (carState.throttlePosition == 200){ // Wide Open Throttle
+            sprintf(output, "WOT R%04i %03i", carState.engineRPM, carState.engineCoolTemp);
+          } else {
+            sprintf(output, "A%02i R%04i %03i", carState.throttlePosition/2,
+                  carState.engineRPM, carState.engineCoolTemp);
+          }
+        }
+        extras = 0x80;
         break;
       }
   }
-  mazda3BKLCDPrint(settings, output, formatting);
+  mazda3BKLCDPrint(settings, output, extras, formatting);
 }
 
-void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t formatting){
+void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
+                                                      uint8_t formatting){
   //uint8_t LCDText1[8] = {192, L1, L2, L3, L4, L5, L6, L7};
   //uint8_t LCDText2[8] = {135, L8, L9, L10, L11, L12, 32, 32};
   //uint8_t outputText[13] = {L1, L2, L3, L4, L5, L6, L7, L8, L9, L10, L11, L12, 0}
@@ -178,6 +188,7 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t formatting){
   uint8_t LCDMsg1[8];
   uint8_t LCDMsg2[8];
 
+  BUSMsg28F[0] = extras; // Sets apostrophes and colons
   BUSMsg28F[3] = formatting; // Sets apostrophes and colons
 
   if (Serial.available() > 0) {

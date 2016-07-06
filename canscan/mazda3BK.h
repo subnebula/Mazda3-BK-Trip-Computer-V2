@@ -19,7 +19,7 @@
 void getData(DeviceState *settings);
 uint8_t getDesiredPage(uint8_t analogVal);
 void formatScreen(DeviceState *settings);
-void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t formatting);
+void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras, uint8_t formatting);
 char guessGear(VehicleData carState);
 
 #ifdef __cplusplus
