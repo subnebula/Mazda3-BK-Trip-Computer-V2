@@ -16,7 +16,7 @@ typedef struct {
   uint16_t bodySpeed; // 100 = 1km/h; can be negative but not known if signed
   uint16_t engineRPM;
   int8_t engineCoolTemp; // Coolant temp, 50 = 0degc
-  uint8_t engineOilTemp; // oil temp? clears when engine stopped - fuel use perhaps?
+  uint8_t fuelUseCounter; // Increments and resets
   uint8_t guess3;  // unk, 
   uint8_t throttlePosition; // Actual position of butterfly valve - changes with cruise on
   uint16_t tripSpeedAvg;

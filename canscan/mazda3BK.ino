@@ -35,7 +35,7 @@ void getData(DeviceState *settings){
         
       case 0x420 :
         (*carState).engineCoolTemp = abs(subjMsg.data[0] - 40); // engine temp? (MADOX)
-        (*carState).engineOilTemp = subjMsg.data[2]; // engine temp? (mine)
+        (*carState).fuelUseCounter = subjMsg.data[2]; // engine temp? (mine)
         break;
 
       case 0x433 :
@@ -145,7 +145,7 @@ void formatScreen(DeviceState *settings){
         break;
 
       case 6 : // Temperature debugging
-        sprintf(output, "%03i %03i %03i", carState.engineCoolTemp, carState.engineOilTemp,
+        sprintf(output, "%03i %03i %03i", carState.engineCoolTemp, carState.fuelUseCounter,
           carState.guess3);
         break;
 
