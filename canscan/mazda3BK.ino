@@ -78,7 +78,7 @@ uint32_t fuelVolumeInc(uint8_t counter, uint64_t total){
   }
 
   if (counter < last){
-    total = (uint64_t)(total + ((uint16_t)counter + (uint16_t)last - 254));
+    total = total + (uint64_t)((counter + 256) - last);
   } else {
     total = (uint64_t)(total + (counter - last));
   }
@@ -174,7 +174,7 @@ void formatScreen(DeviceState *settings){
         break;
 
       case 6 : // Temperature debugging
-        sprintf(output, "%012lli ", carState.fuelUsed);
+        sprintf(output, "%012lu ", carState.fuelUsed);
         break;
 
       default :
