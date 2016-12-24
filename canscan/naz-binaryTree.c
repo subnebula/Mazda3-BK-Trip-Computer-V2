@@ -29,8 +29,6 @@ static BinaryTreeNode *binaryTreeFindRecurs(BinaryTreeNode *subjNode, int inKey)
         return NULL; // Exit here to make the logic a bit simpler for below
     }
 
-    printf("binTreFinRe: called on node %i:%s\n", (*subjNode).key, (char*)(*subjNode).data);
-
     currentKey = (*subjNode).key;
 
     if (currentKey == inKey){
