@@ -26,6 +26,13 @@ void getData(DeviceState *settings){
         (*carState).throttlePosition = subjMsg.data[6];
         break;
 
+      case 0x285 :
+        if (subjMsg.data[0] & 1<<5){
+          (*carState).keyState = on;
+        } else {
+          (*carState).keyState = acc; // board is getting power but !ON
+        }
+
       case 0x400 :
         (*carState).tripSpeedAvg = (uint16_t)(subjMsg.data[0]*256 + subjMsg.data[1]);
         (*carState).tripUsageCur = (uint16_t)(subjMsg.data[2]*256 + subjMsg.data[3]);
@@ -35,7 +42,8 @@ void getData(DeviceState *settings){
         
       case 0x420 :
         (*carState).engineCoolTemp = abs(subjMsg.data[0] - 40); // engine temp? (MADOX)
-        (*carState).fuelUseCounter = subjMsg.data[2]; // engine temp? (mine)
+        (*carState).fuelUseCounter = subjMsg.data[2]; // increments on certain fuel volume
+        (*carState).fuelUsed = fuelVolumeInc(subjMsg.data[2], (*carState).fuelUsed);
         break;
 
       case 0x433 :
@@ -57,6 +65,27 @@ void getData(DeviceState *settings){
   #endif
 }
 
+uint32_t fuelVolumeInc(uint8_t counter, uint64_t total){
+  static uint8_t last = 0;
+  static uint8_t first = 1;
+
+  if (counter == last)
+    return total;
+
+  if (first){
+    last = counter;
+    first = 0;
+  }
+
+  if (counter < last){
+    total = (uint64_t)(total + ((uint16_t)counter + (uint16_t)last - 254));
+  } else {
+    total = (uint64_t)(total + (counter - last));
+  }
+  last = counter;
+  return total;
+}
+
 int getDesiredPage(int analogVal){
   int stepSize, retval;
 
@@ -72,7 +101,7 @@ void formatScreen(DeviceState *settings){
     abort(); //return();
   }
   VehicleData carState = *(*settings).carState;
-  char output[13] = {0,0,0,0,0,0,0,0,0,0,0,0,0};
+  char output[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0}; // +1 for the NUL at the end
   uint8_t extras = 0;
   uint8_t formatting = 0;
 
@@ -108,13 +137,13 @@ void formatScreen(DeviceState *settings){
         break;
 
       case 1 : // Powertrain stats
-        if (carState.engineRPM == 0){
+        if (carState.keyState != on){
           sprintf(output, "   MadMaz   ");
-        } else {
+        } else if (carState.keyState == on){
           if (carState.throttlePosition == 200){ // Wide Open Throttle
             sprintf(output, "WOT R%04i %2i", carState.engineRPM, carState.engineCoolTemp);
           } else {
-            sprintf(output, "A%02i R%04i %2i", carState.throttlePosition/2,
+            sprintf(output, "%03i R%04i %2i", carState.throttlePosition,
                   carState.engineRPM, carState.engineCoolTemp);
           }
         }
@@ -145,8 +174,7 @@ void formatScreen(DeviceState *settings){
         break;
 
       case 6 : // Temperature debugging
-        sprintf(output, "%03i %03i %03i", carState.engineCoolTemp, carState.fuelUseCounter,
-          carState.guess3);
+        sprintf(output, "%012lli ", carState.fuelUsed);
         break;
 
       default :

@@ -6,6 +6,8 @@
 #include <SPI.h>
 #include <mcp_can.h>
 
+enum KeyBarrel {off, acc, on, start};
+
 typedef struct {
   uint16_t ID;
   uint8_t length;
@@ -17,6 +19,7 @@ typedef struct {
   uint16_t engineRPM;
   int8_t engineCoolTemp; // Coolant temp, 50 = 0degc
   uint8_t fuelUseCounter; // Increments and resets
+  uint64_t fuelUsed;
   uint8_t guess3;  // unk, 
   uint8_t throttlePosition; // Actual position of butterfly valve - changes with cruise on
   uint16_t tripSpeedAvg;
@@ -26,6 +29,7 @@ typedef struct {
   uint8_t doorState;
   boolean gearReverse;
   boolean handbrake;
+  KeyBarrel keyState;
 } VehicleData;
 
 typedef struct {
