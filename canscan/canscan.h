@@ -9,7 +9,7 @@
 
 //const uint8_t displayPage = 1;
 #define SPI_CAN1CS_PIN 9
-#define SPI_CAN2CS_PIN 8
+#define MCP2515INT 2
 #define _WITHANALYSE
 #define _MAZDA3BK
 
@@ -25,12 +25,7 @@
 
 #endif
 
-#ifdef _INCLUDE_CANFUNC
-extern "C"{
-  #include <naz-linkList.h>
-}
-#include "canfunctions.h"
-#endif
+#include "naz-binaryTree.h"
 
 #ifdef _MAZDA3BK
 #include "mazda3BK.h"

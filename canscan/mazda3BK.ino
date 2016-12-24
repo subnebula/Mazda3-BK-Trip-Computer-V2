@@ -26,12 +26,18 @@ void getData(DeviceState *settings){
         (*carState).throttlePosition = subjMsg.data[6];
         break;
 
+      case 0x265 :
+        (*carState).indicatorLeft = (subjMsg.data[0] & 1<<5);
+        (*carState).indicatorRight = (subjMsg.data[0] & 1<<6);
+        break;
+
       case 0x285 :
         if (subjMsg.data[0] & 1<<5){
           (*carState).keyState = on;
         } else {
           (*carState).keyState = acc; // board is getting power but !ON
         }
+        break;
 
       case 0x400 :
         (*carState).tripSpeedAvg = (uint16_t)(subjMsg.data[0]*256 + subjMsg.data[1]);
@@ -141,9 +147,9 @@ void formatScreen(DeviceState *settings){
           sprintf(output, "   MadMaz   ");
         } else if (carState.keyState == on){
           if (carState.throttlePosition == 200){ // Wide Open Throttle
-            sprintf(output, "WOT R%04i %2i", carState.engineRPM, carState.engineCoolTemp);
+            sprintf(output, "WOT %04i %3i", carState.engineRPM, carState.engineCoolTemp);
           } else {
-            sprintf(output, "%03i R%04i %2i", carState.throttlePosition,
+            sprintf(output, "%03i %04i %3i", carState.throttlePosition,
                   carState.engineRPM, carState.engineCoolTemp);
           }
         }
@@ -192,6 +198,7 @@ void formatScreen(DeviceState *settings){
         break;
       }
   }
+    extras = extras + (2^3);
   mazda3BKLCDPrint(settings, output, extras, formatting);
 }
 

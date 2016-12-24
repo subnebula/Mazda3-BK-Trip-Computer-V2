@@ -95,48 +95,19 @@ void trigger(MCP_CAN subjCAN, uint16_t triggerOnID, uint16_t triggerOnIndex,
   }
 }
 
-LinkedListNode *linkedListFind(LinkedList *subjList, uint16_t msgID){
-  boolean looping;
-  uint8_t iterations = 0;
-  BusMessage *subjMsg;
-  LinkedListNode *retval, *subjNode;
-  uint8_t listSize = linkedListGetSize(subjList);
-  if (listSize == 0){
-    retval =  nullptr;
-  } else {
-    looping = true;
-    subjNode = (*subjList).head;
-    while (looping){
-      subjMsg = (BusMessage*)(*subjNode).data;
-      if ((*subjMsg).ID == msgID){
-        looping = false;
-        retval = subjNode;
-      } else {
-        iterations++;
-        subjNode = (*subjNode).follower;
-        if (subjNode == nullptr){
-          looping = false;
-          retval = nullptr;
-        }
-      }
-    }
-  }
-  return retval;
-}
-
-void analyse(MCP_CAN subjCAN, LinkedList *subjList){
+void analyse(MCP_CAN subjCAN, BinaryTree *subjTree){
   BusMessage subjMsg = getMessage(subjCAN);
 
-  analyseMessage(subjMsg, subjList);
+  analyseMessage(subjMsg, subjTree);
 }
 
-void analyseMessage(BusMessage inMsg, LinkedList *subjList){
-  LinkedListNode *subjNode;
+void analyseMessage(BusMessage inMsg, BinaryTree *subjTree){
+  BinaryTreeNode *subjNode;
   BusMessage *subjMsg; // The stored message
   boolean changed = false;
 
   if (inMsg.ID != 0 && inMsg.ID != 0x501 && inMsg.ID != 0x511){
-    subjNode = linkedListFind(subjList, inMsg.ID); // fetch existing message
+    subjNode = binaryTreeFindR(subjTree, inMsg.ID, 0); // fetch existing message
     if (subjNode != nullptr){
       subjMsg = (BusMessage*)(*subjNode).data;
       // Compare the new message with the old one
@@ -204,7 +175,7 @@ void analyseMessage(BusMessage inMsg, LinkedList *subjList){
         }
       }
       Serial.println();
-      linkedListAppend(subjList, subjMsg);
+      binaryTreeInsert(subjTree, (*subjMsg).ID, subjMsg);
     } // End else add to list
   }
 }

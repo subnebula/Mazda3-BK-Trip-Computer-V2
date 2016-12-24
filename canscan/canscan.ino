@@ -12,7 +12,7 @@ MCP_CAN CAN1(SPI_CAN1CS_PIN);
 MCP_CAN CAN2(SPI_CAN2CS_PIN);
 #endif
 #ifdef _INCLUDE_CANFUNC
-LinkedList *msgIndex;
+BinaryTree *msgIndex;
 #endif
 VehicleData carState;
 DeviceState settings;
@@ -23,7 +23,7 @@ uint8_t loopWriteDisplay = 0;
 void setup(){
   Serial.begin(115200);
   #ifdef _INCLUDE_CANFUNC
-  msgIndex = linkedListCreate();
+  msgIndex = binaryTreeCreate();
   #endif
 
   CAN1START_INIT:
@@ -47,19 +47,24 @@ void setup(){
   #endif
 
   settings.analysisEnabled = false;
-  //settings.screenPage = displayPage; //FIX
   settings.carState = &carState;
   settings.canBus = &CAN1;
 
-  MsTimer2::set(15, handleTimer); // 15ms period
+  //attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING); 
+
+  MsTimer2::set(5, handleTimer); // 5ms period
   MsTimer2::start();
+}
+
+void handleMCP2515Int(){
+  loopGetData = 1;
 }
 
 void handleTimer(){
   static uint16_t macroCycles = 0;
   macroCycles++;
 
-  if (macroCycles >= 10){ // Every 100ms
+  if (macroCycles >= 20){ // Every 100ms
     loopWriteDisplay = 1;
     macroCycles = 0;
   } else {
