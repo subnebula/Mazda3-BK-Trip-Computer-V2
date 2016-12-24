@@ -136,7 +136,7 @@ void formatScreen(DeviceState *settings){
         sprintf(output, "   MadMaz   ");
         break;
 
-      case 1 : // Powertrain stats
+      case 5 : // Powertrain stats
         if (carState.keyState != on){
           sprintf(output, "   MadMaz   ");
         } else if (carState.keyState == on){
@@ -168,7 +168,7 @@ void formatScreen(DeviceState *settings){
         sprintf(output, " Speed %05i", carState.bodySpeed);
         break;
 
-      case 5 : // RPM:Speed ratio (debugging gearguessing)
+      case 1 : // RPM:Speed ratio (debugging gearguessing)
         sprintf(output, "R%03i R%04i %c", carState.engineRPM/
           (carState.bodySpeed/100), carState.engineRPM, guessGear(carState));
         break;

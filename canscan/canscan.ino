@@ -17,6 +17,9 @@ LinkedList *msgIndex;
 VehicleData carState;
 DeviceState settings;
 
+uint8_t loopGetData = 0;
+uint8_t loopWriteDisplay = 0;
+
 void setup(){
   Serial.begin(115200);
   #ifdef _INCLUDE_CANFUNC
@@ -48,22 +51,33 @@ void setup(){
   settings.carState = &carState;
   settings.canBus = &CAN1;
 
-  MsTimer2::set(10, handleTimer); // 1ms period
+  MsTimer2::set(15, handleTimer); // 15ms period
   MsTimer2::start();
 }
 
 void handleTimer(){
-  MsTimer2::stop();
   static uint16_t macroCycles = 0;
   macroCycles++;
 
-  if (macroCycles >= 10){ // Every 10ms
-    formatScreen(&settings);
+  if (macroCycles >= 10){ // Every 100ms
+    loopWriteDisplay = 1;
     macroCycles = 0;
   } else {
-    getData(&settings);
+    loopGetData = 1;
   }
-  MsTimer2::start();
 }
 
-void loop(){} // loop() dies after a while when using this timer library, so don't bother
+void loop(){
+  if (loopGetData){
+    MsTimer2::stop();
+    getData(&settings);
+    loopGetData = 0;
+    MsTimer2::start();
+  }
+  if (loopWriteDisplay){
+    MsTimer2::stop();
+    formatScreen(&settings);
+    loopWriteDisplay = 0;
+    MsTimer2::start();
+  }
+}
