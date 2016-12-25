@@ -48,8 +48,10 @@ void getData(DeviceState *settings){
         
       case 0x420 :
         (*carState).engineCoolTemp = abs(subjMsg.data[0] - 40); // engine temp? (MADOX)
-        (*carState).fuelUseCounter = subjMsg.data[2]; // increments on certain fuel volume
-        (*carState).fuelUsed = fuelVolumeInc(subjMsg.data[2], (*carState).fuelUsed);
+        if ((*carState).keyState == on){
+          (*carState).fuelUseCounter = subjMsg.data[2]; // increments per 0.0001 litres consumed
+          (*carState).fuelUsed = fuelVolumeInc(subjMsg.data[2], (*carState).fuelUsed);
+        }
         break;
 
       case 0x433 :
@@ -71,7 +73,7 @@ void getData(DeviceState *settings){
   #endif
 }
 
-uint32_t fuelVolumeInc(uint8_t counter, uint64_t total){
+uint32_t fuelVolumeInc(uint8_t counter, uint32_t total){
   static uint8_t last = 0;
   static uint8_t first = 1;
 
@@ -84,9 +86,9 @@ uint32_t fuelVolumeInc(uint8_t counter, uint64_t total){
   }
 
   if (counter < last){
-    total = total + (uint64_t)((counter + 256) - last);
+    total = total + (uint32_t)((counter + 256) - last);
   } else {
-    total = (uint64_t)(total + (counter - last));
+    total = (uint32_t)(total + (counter - last));
   }
   last = counter;
   return total;
