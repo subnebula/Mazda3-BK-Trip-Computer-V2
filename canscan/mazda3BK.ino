@@ -11,7 +11,7 @@ void getData(DeviceState *settings){
   boolean analyseActive = (*settings).analysisEnabled;
   VehicleData *carState = (*settings).carState;
   MCP_CAN subjCAN = *(*settings).canBus;
-  
+
   BusMessage subjMsg = getMessage(subjCAN);
   if(subjMsg.ID != 0){ // Check if message available
     switch(subjMsg.ID) {
@@ -46,7 +46,7 @@ void getData(DeviceState *settings){
         (*carState).tripUsageAvg = (uint16_t)(subjMsg.data[4]*256 + subjMsg.data[5]);
         (*carState).tripDistRemain = (uint16_t)(subjMsg.data[6]*256 + subjMsg.data[7]);
         break;
-        
+     
       case 0x420 :
         (*carState).engineCoolTemp = abs(subjMsg.data[0] - 40); // engine temp? (MADOX)
         if ((*carState).keyState == on){
@@ -114,6 +114,7 @@ void formatScreen(DeviceState *settings){
   uint8_t extras = 0;
   uint8_t formatting = 0;
 
+
   /*
   |            |
   |Axx Rxxxx G?| Throttle RPM GearGuess
@@ -140,8 +141,8 @@ void formatScreen(DeviceState *settings){
   } else {
     displayPage = getDesiredPage(analogRead(RHEOSTAT_INPUT));
     switch(displayPage){
-    
-      case 0 : 
+
+      case 0 :
         sprintf(output, "   MadMaz   ");
         break;
 
@@ -185,9 +186,9 @@ void formatScreen(DeviceState *settings){
       case 6 : // Fuel usage
         if ((carState.hasStarted) && (carState.keyState != on))
         {
-          sprintf(output, "Used %2.3fL", (double)carState.fuelUsed/10000);
+          sprintf(output, "    %06lumL", carState.fuelUsed/10);
         } else {
-          sprintf(output, "%012lu", carState.fuelUsed);
+          sprintf(output, "    %07lu", carState.fuelUsed/10);
         }
         break;
 
@@ -256,7 +257,7 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   while (Serial.available() > 0) {
     inChar = Serial.read(); // clear buffered up messages
   }
-  
+
   LCDMsg1[0] = 192; // Weird magic value, some others may be for scrolling
   for (int i = 0; i < 7; i++){
     LCDMsg1[i+1] = inStr[i];

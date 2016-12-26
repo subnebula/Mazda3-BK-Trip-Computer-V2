@@ -50,7 +50,7 @@ void setup(){
   settings.carState = &carState;
   settings.canBus = &CAN1;
 
-  //attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING); 
+  //attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING);
 
   MsTimer2::set(5, handleTimer); // 5ms period
   MsTimer2::start();
