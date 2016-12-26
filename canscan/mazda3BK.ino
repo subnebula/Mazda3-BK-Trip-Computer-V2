@@ -327,7 +327,7 @@ void stateToSerial(DeviceState *settings){
   
   if (firstLine){
     Serial.print("SAMPLE,RPM,SPEED,THROTTLE,T_COOL_ENG,FUEL_COUN,FUEL_TOT,");
-    Serial.print("TRIP_DISTREM,TRIP_USE_INST,INDI_LEFT,INI_RIGHT;\r\n");
+    Serial.print("TRIP_DISTREM,TRIP_USE_INST,INDI_LEFT,INDI_RIGHT;\r\n");
     firstLine = false;
   }
   sprintf(bufferStr, "%li,%i,%u,%u,%u,%lu,%u,%u,%u,%u;\r\n", 
