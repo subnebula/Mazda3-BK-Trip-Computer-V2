@@ -34,6 +34,7 @@ void getData(DeviceState *settings){
       case 0x285 :
         if (subjMsg.data[0] & 1<<5){
           (*carState).keyState = on;
+          (*carState).hasStarted = true;
         } else {
           (*carState).keyState = acc; // board is getting power but !ON
         }
@@ -144,17 +145,9 @@ void formatScreen(DeviceState *settings){
         sprintf(output, "   MadMaz   ");
         break;
 
-      case 5 : // Powertrain stats
-        if (carState.keyState != on){
-          sprintf(output, "   MadMaz   ");
-        } else if (carState.keyState == on){
-          if (carState.throttlePosition == 200){ // Wide Open Throttle
-            sprintf(output, "WOT %04i %3i", carState.engineRPM, carState.engineCoolTemp);
-          } else {
-            sprintf(output, "%03i %04i %3i", carState.throttlePosition,
-                  carState.engineRPM, carState.engineCoolTemp);
-          }
-        }
+      case 1 : // RPM:Speed ratio (debugging gearguessing)
+        sprintf(output, "R%03i R%04i %c", carState.engineRPM/
+          (carState.bodySpeed/100), carState.engineRPM, guessGear(carState));
         break;
 
       case 2 : // Trip stats page 1
@@ -176,13 +169,26 @@ void formatScreen(DeviceState *settings){
         sprintf(output, " Speed %05i", carState.bodySpeed);
         break;
 
-      case 1 : // RPM:Speed ratio (debugging gearguessing)
-        sprintf(output, "R%03i R%04i %c", carState.engineRPM/
-          (carState.bodySpeed/100), carState.engineRPM, guessGear(carState));
+      case 5 : // Powertrain stats
+        if (carState.keyState != on){
+          sprintf(output, "   MadMaz   ");
+        } else if (carState.keyState == on){
+          if (carState.throttlePosition == 200){ // Wide Open Throttle
+            sprintf(output, "WOT %04i %3i", carState.engineRPM, carState.engineCoolTemp);
+          } else {
+            sprintf(output, "%03i %04i %3i", carState.throttlePosition,
+                  carState.engineRPM, carState.engineCoolTemp);
+          }
+        }
         break;
 
-      case 6 : // Temperature debugging
-        sprintf(output, "%012lu ", carState.fuelUsed);
+      case 6 : // Fuel usage
+        if ((carState.hasStarted) && (carState.keyState != on))
+        {
+          sprintf(output, "Used %2.3fL", (double)carState.fuelUsed/10000);
+        } else {
+          sprintf(output, "%012lu", carState.fuelUsed);
+        }
         break;
 
       default :

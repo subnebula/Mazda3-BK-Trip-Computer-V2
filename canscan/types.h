@@ -27,6 +27,7 @@ typedef struct {
   uint16_t tripUsageAvg;
   uint16_t tripDistRemain;
   uint8_t doorState;
+  boolean hasStarted;
   boolean indicatorLeft;
   boolean indicatorRight;
   boolean gearReverse;
