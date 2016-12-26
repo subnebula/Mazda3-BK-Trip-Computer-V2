@@ -17,6 +17,7 @@
 #define RHEOSTAT_RES_MAX 25 // Bottom of rheostat
 
 void getData(DeviceState *settings);
+uint32_t fuelVolumeInc(uint8_t counter, uint32_t total);
 uint8_t getDesiredPage(uint8_t analogVal);
 void formatScreen(DeviceState *settings);
 void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras, uint8_t formatting);

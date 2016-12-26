@@ -140,7 +140,7 @@ void formatScreen(DeviceState *settings){
     }
   } else {
     displayPage = getDesiredPage(analogRead(RHEOSTAT_INPUT));
-    switch(displayPage){
+    switch (displayPage){
 
       case 0 :
         sprintf(output, "   MadMaz   ");
@@ -236,21 +236,34 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
 
   if (Serial.available() > 0) {
     inChar = Serial.read();
-    if (inChar == 'S'){
-      Serial.println("[msg] SET");
-      BUSMsg28F[4] = 40;
-    } else if (inChar == 'C'){
-      Serial.println("[msg] CLOCK");
-      BUSMsg28F[4] = 48;
-    } else if (inChar == 'D'){
-      Serial.println("[msg] DISON");
-      BUSMsg28F[4] = 160;
-    #ifdef _WITHANALYSE
-    } else if (inChar == 'A'){
-      Serial.print("[option] analysis ");
-      *analyseActive = !(*analyseActive);
-      Serial.println(*analyseActive, HEX);
-    #endif
+    switch (inChar){
+    
+      case 'S':
+        Serial.println("[msg] SET");
+        BUSMsg28F[4] = 40;
+        break;
+
+      case 'C':
+        Serial.println("[msg] CLOCK");
+        BUSMsg28F[4] = 48;
+        break;
+
+      case 'D':
+        Serial.println("[msg] DISON");
+        BUSMsg28F[4] = 160;
+        break;
+
+      #ifdef _WITHANALYSE
+      case 'A':
+        Serial.print("[option] analysis ");
+        *analyseActive = !(*analyseActive);
+        Serial.println(*analyseActive, HEX);
+        break;
+      #endif
+
+      case 'L':
+        Serial.print("[option] datalogging ");
+        (*settings).loggingEnabled = !(*settings).loggingEnabled;
     }
   }
 
@@ -299,6 +312,38 @@ char guessGear(VehicleData carState){
   }
 
   return(retval);
+}
+
+void stateToSerial(DeviceState *settings){
+  VehicleData *carState = (*settings).carState;
+  boolean firstLine = true;
+  static uint32_t sample = 0;
+  
+  char *bufferStr = (char*)calloc(100,sizeof(char));
+  
+  
+  // since we have no RTC we are not going to bother with the time
+  // 
+  
+  if (firstLine){
+    Serial.print("SAMPLE,RPM,SPEED,THROTTLE,T_COOL_ENG,FUEL_COUN,FUEL_TOT,");
+    Serial.print("TRIP_DISTREM,TRIP_USE_INST,INDI_LEFT,INI_RIGHT;\r\n");
+    firstLine = false;
+  }
+  sprintf(bufferStr, "%li,%i,%u,%u,%u,%lu,%u,%u,%u,%u;\r\n", 
+    sample,
+    (*carState).engineRPM,
+    (*carState).throttlePosition,
+    (*carState).engineCoolTemp,
+    (*carState).fuelUseCounter,
+    (*carState).fuelUsed,
+    (*carState).tripDistRemain,
+    (*carState).tripUsageCur,
+    (uint8_t)(*carState).indicatorLeft,
+    (uint8_t)(*carState).indicatorRight
+  );
+  Serial.print(bufferStr);
+  sample++;
 }
 #endif
 

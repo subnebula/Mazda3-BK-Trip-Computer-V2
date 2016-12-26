@@ -8,6 +8,10 @@
 //##############################################
 
 //const uint8_t displayPage = 1;
+#define TIMER_PERIOD 5 //in ms
+#define SAMPLE_PERIOD 1 //in TIMER_PERIODs
+#define REDRAW_PERIOD 20 //in TIMER_PERIODs
+#define LOGGING_PERIOD 20 //in TIMER_PERIODs
 #define SPI_CAN1CS_PIN 9
 #define MCP2515INT 2
 #define _WITHANALYSE
@@ -30,6 +34,9 @@
 #ifdef _MAZDA3BK
 #include "mazda3BK.h"
 #endif
+
+void handleMCP2515Int();
+void handleTimer();
 
 #endif
 

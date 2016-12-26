@@ -37,6 +37,7 @@ typedef struct {
 
 typedef struct {
   boolean analysisEnabled;
+  boolean loggingEnabled;
   VehicleData *carState;
   MCP_CAN *canBus;
 } DeviceState;

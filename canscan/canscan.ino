@@ -19,6 +19,7 @@ DeviceState settings;
 
 uint8_t loopGetData = 0;
 uint8_t loopWriteDisplay = 0;
+uint8_t loopLogWrite = 0;
 
 void setup(){
   Serial.begin(115200);
@@ -52,7 +53,7 @@ void setup(){
 
   //attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING);
 
-  MsTimer2::set(5, handleTimer); // 5ms period
+  MsTimer2::set(TIMER_PERIOD, handleTimer); // 5ms period
   MsTimer2::start();
 }
 
@@ -64,12 +65,14 @@ void handleTimer(){
   static uint16_t macroCycles = 0;
   macroCycles++;
 
-  if (macroCycles >= 20){ // Every 100ms
-    loopWriteDisplay = 1;
-    macroCycles = 0;
-  } else {
+  if (macroCycles >= SAMPLE_PERIOD)
     loopGetData = 1;
-  }
+
+  if (macroCycles >= REDRAW_PERIOD)
+    loopWriteDisplay = 1;
+
+  if (macroCycles >= LOGGING_PERIOD)
+    loopLogWrite = 1
 }
 
 void loop(){
@@ -84,5 +87,11 @@ void loop(){
     formatScreen(&settings);
     loopWriteDisplay = 0;
     MsTimer2::start();
+  }
+  if (loopLogWrite){
+    //MsTimer2::stop();
+    stateToSerial(&settings);
+    loopLogWrite = 0;
+    //MsTimer2::start();
   }
 }
