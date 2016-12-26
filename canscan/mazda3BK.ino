@@ -226,7 +226,6 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   boolean *analyseActive = &(*settings).analysisEnabled;
   MCP_CAN subjCAN = *(*settings).canBus;
 
-  char outputText[13]; // 12 chars + NUL
   char inChar;
   uint8_t LCDMsg1[8];
   uint8_t LCDMsg2[8];
@@ -257,19 +256,15 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   while (Serial.available() > 0) {
     inChar = Serial.read(); // clear buffered up messages
   }
-
-  for (int i=0; i < 13; i++){
-    outputText[i] = inStr[i];
-  }
   
   LCDMsg1[0] = 192; // Weird magic value, some others may be for scrolling
   for (int i = 0; i < 7; i++){
-    LCDMsg1[i+1] = outputText[i];
+    LCDMsg1[i+1] = inStr[i];
   }
 
   LCDMsg2[0] = 135; // Ditto the above
   for (int i = 0; i < 6; i++){
-    LCDMsg2[i+1] = outputText[i+7];
+    LCDMsg2[i+1] = inStr[i+7];
   }
 
   subjCAN.sendMsgBuf(0x28F, 0, 8, BUSMsg28F);
