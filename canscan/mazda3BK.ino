@@ -62,7 +62,7 @@ void getData(DeviceState *settings){
         (*carState).gearReverse = (subjMsg.data[3] & 1<<1); //1st bit
         break;
 
-      default:
+      default :
         break;
         //Not a message we know/want
     }
@@ -113,6 +113,7 @@ void formatScreen(DeviceState *settings){
   char output[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0}; // +1 for the NUL at the end
   uint8_t extras = 0;
   uint8_t formatting = 0;
+  char doorBoot = ' ', doorReaRi = ' ', doorReaLef = ' ', doorFronLef = ' ', doorFronRi = ' ';
 
 
   /*
@@ -127,17 +128,24 @@ void formatScreen(DeviceState *settings){
 
   if (carState.doorState != 0){ // Prioritise door notification
   //if (false){
-    if (carState.doorState & 1<<3) {
-      sprintf(output, "   Boot Open");
-    } else if (carState.doorState & 1<<4){
-      sprintf(output, "R.Right Open");
-    } else if (carState.doorState & 1<<5){
-      sprintf(output, " R.Left Open");
-    } else if (carState.doorState & 1<<6){
-      sprintf(output, " F.Left Open");
-    } else if (carState.doorState & 1<<7){
-      sprintf(output, "F.Right Open");
+    if (carState.doorState & 0x08) { // Boot
+      doorBoot = 31; // Down arrow in ASCII
     }
+    if (carState.doorState & 0x10){ // Rear Right
+      doorReaRi = 0xF0;
+    }
+    if (carState.doorState & 0x20){ // Rear Left
+      doorReaLef = 0xF1;
+    }
+    if (carState.doorState & 0x40){ // Front Left
+      doorFronLef = 0xF1;
+    }
+    if (carState.doorState & 0x80){ // Front Right
+      doorFronRi = 0xF0;
+    }
+    sprintf(output, "%c%c%c Open %c%c%c", doorFronLef, doorReaLef, doorBoot, doorBoot, 
+      doorReaRi, doorFronRi);
+      //"<<_ Open _>>"
   } else {
     displayPage = getDesiredPage(analogRead(RHEOSTAT_INPUT));
     switch (displayPage){
@@ -224,7 +232,6 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
     Serial.println("ERR: getData() passed bad settings");
     abort(); //return();
   }
-  boolean *analyseActive = &(*settings).analysisEnabled;
   MCP_CAN subjCAN = *(*settings).canBus;
 
   char inChar;
@@ -255,14 +262,13 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
 
       #ifdef _WITHANALYSE
       case 'A':
-        Serial.print("[option] analysis ");
-        *analyseActive = !(*analyseActive);
-        Serial.println(*analyseActive, HEX);
+        Serial.println("[option] analysis ");
+        (*settings).analysisEnabled = !(*settings).analysisEnabled;
         break;
       #endif
 
       case 'L':
-        Serial.print("[option] datalogging ");
+        Serial.println("[option] datalogging ");
         (*settings).loggingEnabled = !(*settings).loggingEnabled;
     }
   }
@@ -316,7 +322,7 @@ char guessGear(VehicleData carState){
 
 void stateToSerial(DeviceState *settings){
   VehicleData *carState = (*settings).carState;
-  boolean firstLine = true;
+  static boolean firstLine = true;
   static uint32_t sample = 0;
   
   char *bufferStr = (char*)calloc(100,sizeof(char));
@@ -343,6 +349,7 @@ void stateToSerial(DeviceState *settings){
     (uint8_t)(*carState).indicatorRight
   );
   Serial.print(bufferStr);
+  free(bufferStr);
   sample++;
 }
 #endif

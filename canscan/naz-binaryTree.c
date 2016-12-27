@@ -57,7 +57,7 @@ BinaryTreeNode *binaryTreeFindR(BinaryTree *subjTree, int inKey, int retParent){
 
     retval = binaryTreeFindRecurs((*subjTree).root, inKey);
 
-    if ((*retval).key != inKey && !retParent){
+    if (((*retval).key != inKey) && !retParent){
         retval = NULL;
     }
 

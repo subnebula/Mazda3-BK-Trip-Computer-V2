@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct BinaryTreeNode {
     struct BinaryTreeNode *parent;
-    uint16_t key;
+    int key;
     void *data;
     struct BinaryTreeNode *childLeft;
     struct BinaryTreeNode *childRight;

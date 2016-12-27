@@ -48,6 +48,7 @@ void setup(){
   #endif
 
   settings.analysisEnabled = false;
+  settings.loggingEnabled = false;
   settings.carState = &carState;
   settings.canBus = &CAN1;
 
@@ -65,14 +66,17 @@ void handleTimer(){
   static uint16_t macroCycles = 0;
   macroCycles++;
 
-  if (macroCycles >= SAMPLE_PERIOD)
+  if (!(macroCycles % SAMPLE_PERIOD)) // if SAMPLE_PERIOD cleanly goes into macroCycles
     loopGetData = 1;
 
-  if (macroCycles >= REDRAW_PERIOD)
+  if (!(macroCycles % REDRAW_PERIOD))
     loopWriteDisplay = 1;
 
-  if (macroCycles >= LOGGING_PERIOD)
-    loopLogWrite = 1
+  if (!(macroCycles % LOGGING_PERIOD) && settings.loggingEnabled)
+    loopLogWrite = 1;
+    
+  if (macroCycles >= 60000)
+    macroCycles = 0;
 }
 
 void loop(){
