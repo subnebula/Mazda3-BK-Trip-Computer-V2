@@ -194,7 +194,7 @@ void formatScreen(DeviceState *settings){
       case 6 : // Fuel usage
         if ((carState.hasStarted) && (carState.keyState != on))
         {
-          sprintf(output, "    %06lumL", carState.fuelUsed/10); // mL
+          sprintf(output, "    %06lumL", carState.fuelUsed/5); // mL
         } else {
           sprintf(output, "    %07lu", carState.fuelUsed); // Raw units displayed
         }
