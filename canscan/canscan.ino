@@ -23,6 +23,12 @@ uint8_t loopLogWrite = 0;
 
 void setup(){
   Serial.begin(115200);
+  Serial.print("canscan compiled for Mazda 3 BK2, at ");
+  Serial.print(__DATE__);
+  Serial.print(" ");
+  Serial.print(__TIME__);
+  Serial.print("\r\n");
+  Serial.print("(C) 2015 - 2017 Nathaniel Roach\r\n");
   #ifdef _INCLUDE_CANFUNC
   msgIndex = binaryTreeCreate();
   #endif
@@ -52,9 +58,12 @@ void setup(){
   settings.carState = &carState;
   settings.canBus = &CAN1;
 
+  pinMode(MCP2515INT, INPUT);
   attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING);
   pinMode(IN_BUTTON, INPUT_PULLUP);
   pinMode(OUT_WASHER,OUTPUT);
+
+  set_sleep_mode(SLEEP_MODE_IDLE);
 
   MsTimer2::set(TIMER_PERIOD, handleTimer); // 5ms period
   MsTimer2::start();
@@ -62,6 +71,7 @@ void setup(){
 
 void handleMCP2515Int(){
   loopGetData = 1;
+//  digitalWrite(OUT_WASHER, 1);
 }
 
 void handleTimer(){
@@ -100,4 +110,7 @@ void loop(){
     loopLogWrite = 0;
     //MsTimer2::start();
   }
+  sleep_enable();
+  sleep_mode();
+  sleep_disable();
 }

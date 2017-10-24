@@ -19,7 +19,7 @@
 
 //##############################################
 
-
+#include <avr/sleep.h>
 #include <SPI.h>
 #include <mcp_can.h> // MCP2515 CAN Controller library from seeed-studios
 #include <MsTimer2.h>
