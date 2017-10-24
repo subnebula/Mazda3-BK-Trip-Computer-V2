@@ -21,7 +21,7 @@
 #define ENGINE_RPM_REDLINE 6500
 #define ENGINE_RPM_SHIFT 3500
 
-#define SHIFT_LIGHT_DELAY 20000 // in ms
+#define SHIFT_LIGHT_DELAY 10000 // in ms
 
 // y = mx + c
 #define SHIFT_LIGHT_M 100
