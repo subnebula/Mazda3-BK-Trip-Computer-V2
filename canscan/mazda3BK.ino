@@ -221,10 +221,10 @@ void formatScreen(DeviceState *settings){
 
 uint8_t decideShiftLight(DeviceState *settings){
   uint8_t retval = 0;
-  uint8_t counting = 0;
+  static uint8_t counting = 0;
   static unsigned long tstart;
   VehicleData carState = *(*settings).carState;
-  
+
   if (carState.engineRPM >= ENGINE_RPM_REDLINE){
     retval = 1;
   } else if (carState.engineRPM >= 
