@@ -219,6 +219,31 @@ void formatScreen(DeviceState *settings){
   mazda3BKLCDPrint(settings, output, extras, formatting);
 }
 
+uint8_t decideShiftLight(DeviceState *settings){
+  uint8_t retval = 0;
+  uint8_t counting = 0;
+  static unsigned long tstart;
+  VehicleData carState = *(*settings).carState;
+  
+  if (carState.engineRPM >= ENGINE_RPM_REDLINE){
+    retval = 1;
+  } else if (carState.engineRPM >= 
+    (unsigned)((SHIFT_LIGHT_M*carState.engineCoolTemp)+SHIFT_LIGHT_C)){
+    retval = 1; // "Receding redline" similar to those used in BMWs re. oil
+  } else if (carState.engineRPM >= ENGINE_RPM_SHIFT){
+    if (!counting ){
+      if (carState.engineRPM >= ENGINE_RPM_SHIFT + 100){ // Add some hysteresis
+        counting = 1;
+        tstart = millis();
+      }
+    } else {
+      retval = (millis() >= (tstart + SHIFT_LIGHT_DELAY));
+    }
+  } else
+    counting = 0;
+  return retval;
+}
+
 void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
                                                       uint8_t formatting){
   //uint8_t LCDText1[8] = {192, L1, L2, L3, L4, L5, L6, L7};
@@ -237,9 +262,31 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   char inChar;
   uint8_t LCDMsg1[8];
   uint8_t LCDMsg2[8];
+  static uint8_t buttonCount = 0;
+  static uint8_t tickCount = 0;
 
   BUSMsg28F[0] = extras; // Sets apostrophes and colons
   BUSMsg28F[3] = formatting; // Sets apostrophes and colons
+
+  if ((tickCount == 0) && !digitalRead(IN_BUTTON)){
+    buttonCount++;
+    tickCount = 1;
+    if (buttonCount < 4){
+      Serial.println("[msg] SET");
+      BUSMsg28F[4] = 40;
+    } else {
+      buttonCount = 0;
+      Serial.println("[msg] CLOCK");
+      BUSMsg28F[4] = 48;
+    }
+  }
+  if (tickCount != 0){
+    tickCount++;
+  }
+  if (tickCount >= 5){
+    tickCount = 0;
+  }
+  
 
   if (Serial.available() > 0) {
     inChar = Serial.read();
@@ -290,6 +337,7 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   subjCAN.sendMsgBuf(0x28F, 0, 8, BUSMsg28F);
   subjCAN.sendMsgBuf(0x290, 0, 8, LCDMsg1);
   subjCAN.sendMsgBuf(0x291, 0, 8, LCDMsg2);
+  digitalWrite(OUT_WASHER, decideShiftLight(settings));
 }
 
 char guessGear(VehicleData carState){

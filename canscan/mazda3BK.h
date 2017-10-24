@@ -15,6 +15,17 @@
 #define RHEOSTAT_STEPS 6
 #define RHEOSTAT_RES_MIN 520 // Top of rheostat
 #define RHEOSTAT_RES_MAX 25 // Bottom of rheostat
+#define IN_BUTTON 3
+#define OUT_WASHER 4
+
+#define ENGINE_RPM_REDLINE 6500
+#define ENGINE_RPM_SHIFT 3500
+
+#define SHIFT_LIGHT_DELAY 20000 // in ms
+
+// y = mx + c
+#define SHIFT_LIGHT_M 100
+#define SHIFT_LIGHT_C 1000
 
 void getData(DeviceState *settings);
 uint32_t fuelVolumeInc(uint8_t counter, uint32_t total);
