@@ -16,14 +16,11 @@ void getData(DeviceState *settings){
   if(subjMsg.ID != 0){ // Check if message available
     switch(subjMsg.ID) {
       case 0x201 :
-        (*carState).engineRPM = (uint16_t)(subjMsg.data[0]*256 + subjMsg.data[1]);
-        if ((*carState).engineRPM > 9000){ //Hacky overflow check, may not be needed
-          (*carState).engineRPM = 0;
+        if ((*carState).keyState == on){ // Values are nonsensical otherwise
+          (*carState).engineRPM = (uint16_t)(subjMsg.data[0]*256 + subjMsg.data[1]);
+          (*carState).bodySpeed = (uint16_t)(subjMsg.data[4]*256 + subjMsg.data[5]);
+          (*carState).throttlePosition = subjMsg.data[6];
         }
-        (*carState).bodySpeed = (uint16_t)(subjMsg.data[4]*256 + subjMsg.data[5]);
-        if ((*carState).bodySpeed == 32768)
-          (*carState).bodySpeed = 0;
-        (*carState).throttlePosition = subjMsg.data[6];
         break;
 
       case 0x265 :
@@ -111,7 +108,8 @@ void formatScreen(DeviceState *settings){
   }
   VehicleData carState = *(*settings).carState;
   char output[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0}; // +1 for the NUL at the end
-  uint8_t extras = 0;
+  uint8_t extras1 = 0;
+  uint8_t extras2 = 0;
   uint8_t formatting = 0;
   char doorBoot = ' ', doorReaRi = ' ', doorReaLef = ' ', doorFronLef = ' ', doorFronRi = ' ';
 
@@ -149,6 +147,10 @@ void formatScreen(DeviceState *settings){
   } else {
     displayPage = getDesiredPage(analogRead(RHEOSTAT_INPUT));
     switch (displayPage){
+
+      default :
+        displayPage = 5;
+        extras1 += 1;
 
       case 0 :
         sprintf(output, "   MadMaz   ");
@@ -200,23 +202,9 @@ void formatScreen(DeviceState *settings){
         }
         break;
 
-      default :
-        if (carState.engineRPM == 0){
-          sprintf(output, "   MadMaz   ");
-        } else {
-          if (carState.throttlePosition == 200){ // Wide Open Throttle
-            sprintf(output, "WOT R%04i %03i", carState.engineRPM, carState.engineCoolTemp);
-          } else {
-            sprintf(output, "A%02i R%04i %03i", carState.throttlePosition/2,
-                  carState.engineRPM, carState.engineCoolTemp);
-          }
-        }
-        extras = 0x80;
-        break;
       }
   }
-    extras = extras + (2^3);
-  mazda3BKLCDPrint(settings, output, extras, formatting);
+  mazda3BKLCDPrint(settings, output, extras1, extras2, formatting);
 }
 
 uint8_t decideShiftLight(DeviceState *settings){
@@ -244,13 +232,13 @@ uint8_t decideShiftLight(DeviceState *settings){
   return retval;
 }
 
-void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
-                                                      uint8_t formatting){
+void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras1,
+                                      uint8_t extras2, uint8_t formatting){
   //uint8_t LCDText1[8] = {192, L1, L2, L3, L4, L5, L6, L7};
   //uint8_t LCDText2[8] = {135, L8, L9, L10, L11, L12, 32, 32};
   //uint8_t outputText[13] = {L1, L2, L3, L4, L5, L6, L7, L8, L9, L10, L11, L12, 0}
   uint8_t BUSMsg28F[8] = {128, 0, 0, 0, 32, 0, 0, 0};
-  //                                    ^ Set this to two to see all valid
+  //                                       ^ Set this to two to see all valid
   //                                      formatting locations
 
   if (settings == nullptr){
@@ -265,7 +253,8 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras,
   static uint8_t buttonCount = 0;
   static uint8_t tickCount = 0;
 
-  BUSMsg28F[0] = extras; // Sets apostrophes and colons
+  BUSMsg28F[0] += extras1; // Sets segments above free text (CD IN etc.)
+  BUSMsg28F[1] += extras2;
   BUSMsg28F[3] = formatting; // Sets apostrophes and colons
 
   if ((tickCount == 0) && !digitalRead(IN_BUTTON)){
