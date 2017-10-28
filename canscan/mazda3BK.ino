@@ -260,6 +260,8 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras1,
   if ((tickCount == 0) && !digitalRead(IN_BUTTON)){
     buttonCount++;
     tickCount = 1;
+    
+    // Simulate button press on radio
     if (buttonCount < 4){
       Serial.println("[msg] SET");
       BUSMsg28F[4] = 40;
@@ -272,10 +274,15 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras1,
   if (tickCount != 0){
     tickCount++;
   }
-  if (tickCount >= 5){
+  if (tickCount >= 5 && digitalRead(IN_BUTTON)){ // if button is no longer held
     tickCount = 0;
   }
+  if ((tickCount % 21) == 20){
+    accHold = !accHold;
+  }
   
+  if (accHold)
+    BUSMsg28F[1] += 0b10000000; // Turn on PTY section
 
   if (Serial.available() > 0) {
     inChar = Serial.read();
