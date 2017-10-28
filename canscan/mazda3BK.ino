@@ -150,7 +150,7 @@ void formatScreen(DeviceState *settings){
 
       default :
         displayPage = 5;
-        extras1 += 1;
+        extras1 += 1; // Turn on AF bit
 
       case 0 :
         sprintf(output, "   MadMaz   ");
