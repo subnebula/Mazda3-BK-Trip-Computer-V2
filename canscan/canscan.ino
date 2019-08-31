@@ -60,8 +60,9 @@ void setup(){
 
   pinMode(MCP2515INT, INPUT);
   attachInterrupt(digitalPinToInterrupt(MCP2515INT), handleMCP2515Int, RISING);
-  pinMode(IN_BUTTON, INPUT_PULLUP);
-  pinMode(OUT_WASHER,OUTPUT);
+  pinMode(IN_BUTTON, INPUT);
+  pinMode(OUT_WASHER, OUTPUT);
+  pinMode(A0, OUTPUT);
 
   set_sleep_mode(SLEEP_MODE_IDLE);
 

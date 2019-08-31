@@ -11,11 +11,11 @@
 #include "canscan.h"
 #include "canfunctions.h"
 
-#define RHEOSTAT_INPUT A0
+#define RHEOSTAT_INPUT A1
 #define RHEOSTAT_STEPS 6
 #define RHEOSTAT_RES_MIN 520 // Top of rheostat
 #define RHEOSTAT_RES_MAX 25 // Bottom of rheostat
-#define IN_BUTTON 3
+#define IN_BUTTON 7
 #define OUT_WASHER 4
 
 #define ENGINE_RPM_REDLINE 6500

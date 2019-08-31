@@ -3,6 +3,10 @@
 
 #ifdef _MAZDA3BK
 
+boolean accHold;
+int displayPage;
+
+
 void getData(DeviceState *settings){
   if (settings == nullptr){
     Serial.println("ERR: getData() passed bad settings");
@@ -56,7 +60,9 @@ void getData(DeviceState *settings){
         (*carState).doorState = subjMsg.data[0];
         (*carState).guess3 = subjMsg.data[2];  // engine temp? 1 = .25 degc (MADOX)
         (*carState).handbrake = (subjMsg.data[3] & 1<<0); //0th bit
-        (*carState).gearReverse = (subjMsg.data[3] & 1<<1); //1st bit
+        if ((*carState).keyState == on){
+          (*carState).gearReverse = (subjMsg.data[3] & 1<<1); //1st bit
+        }
         break;
 
       default :
@@ -92,16 +98,8 @@ uint32_t fuelVolumeInc(uint8_t counter, uint32_t total){
   return total;
 }
 
-int getDesiredPage(int analogVal){
-  int stepSize, retval;
-
-  stepSize = abs(RHEOSTAT_RES_MAX - RHEOSTAT_RES_MIN)/RHEOSTAT_STEPS;
-  retval = analogVal / stepSize;
-  return retval;
-}
-
 void formatScreen(DeviceState *settings){
-  int displayPage;
+
   if (settings == nullptr){
     Serial.println("ERR: formatScreen() passed bad settings");
     abort(); //return();
@@ -145,44 +143,47 @@ void formatScreen(DeviceState *settings){
       doorReaRi, doorFronRi);
       //"<<_ Open _>>"
   } else {
-    displayPage = getDesiredPage(analogRead(RHEOSTAT_INPUT));
+    if (displayPage == 7)
+      displayPage = 0;
     switch (displayPage){
 
       default :
-        displayPage = 5;
+        displayPage = 0;
         extras1 += 1; // Turn on AF bit
 
       case 0 :
-        sprintf(output, "   MadMaz   ");
+      if (carState.keyState != on){
+          sprintf(output, "   Mazda3   ");
+        } else if (carState.keyState == on){
+          sprintf(output, "R%3i %3iKm/h", carState.tripDistRemain, carState.bodySpeed/100);
+        }
         break;
 
       case 1 : // RPM:Speed ratio (debugging gearguessing)
-        sprintf(output, "R%03i R%04i %c", carState.engineRPM/
-          (carState.bodySpeed/100), carState.engineRPM, guessGear(carState));
+        sprintf(output, "%c    %4iRPM", guessGear(carState), carState.engineRPM);
         break;
 
       case 2 : // Trip stats page 1
         if (carState.tripUsageCur > 1500){
-          sprintf(output, " R%03i  C---", carState.tripDistRemain);
+          sprintf(output, "R%-3i   C---", carState.tripDistRemain);
         } else {
           formatting = 2; // Place a dot for the Current consumption
-          sprintf(output, " R%03i C%03i", carState.tripDistRemain, carState.tripUsageCur);
+          sprintf(output, "R%-3i   C%3i", carState.tripDistRemain, carState.tripUsageCur);
         }
         break;
 
       case 3 : // Trip stats page 2
         formatting = 2; // Place a dot for the Current consumption
-        sprintf(output, " AS%03i C%03i", carState.tripSpeedAvg, carState.tripUsageAvg);
+        sprintf(output, "AS%-3i  C%3i", carState.tripSpeedAvg, carState.tripUsageAvg);
         break;
 
       case 4 : // Misc Stats
-        formatting = 2;
-        sprintf(output, " Speed %05i", carState.bodySpeed);
+        sprintf(output, "Speed %3iKph", carState.bodySpeed/100);
         break;
 
       case 5 : // Powertrain stats
         if (carState.keyState != on){
-          sprintf(output, "   MadMaz   ");
+          sprintf(output, "   Mazda3   ");
         } else if (carState.keyState == on){
           if (carState.throttlePosition == 200){ // Wide Open Throttle
             sprintf(output, "WOT %04i %3i", carState.engineRPM, carState.engineCoolTemp);
@@ -250,31 +251,27 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras1,
   char inChar;
   uint8_t LCDMsg1[8];
   uint8_t LCDMsg2[8];
-  static uint8_t buttonCount = 0;
   static uint8_t tickCount = 0;
 
   BUSMsg28F[0] += extras1; // Sets segments above free text (CD IN etc.)
   BUSMsg28F[1] += extras2;
   BUSMsg28F[3] = formatting; // Sets apostrophes and colons
 
-  if ((tickCount == 0) && !digitalRead(IN_BUTTON)){
-    buttonCount++;
+  if ((tickCount == 0) && digitalRead(IN_BUTTON)){
     tickCount = 1;
     
     // Simulate button press on radio
-    if (buttonCount < 4){
+    if (!accHold){
       Serial.println("[msg] SET");
       BUSMsg28F[4] = 40;
     } else {
-      buttonCount = 0;
-      Serial.println("[msg] CLOCK");
-      BUSMsg28F[4] = 48;
+      displayPage +=1 ;
     }
   }
   if (tickCount != 0){
     tickCount++;
   }
-  if (tickCount >= 5 && digitalRead(IN_BUTTON)){ // if button is no longer held
+  if (tickCount >= 5 && !digitalRead(IN_BUTTON)){ // if button is no longer held
     tickCount = 0;
   }
   if ((tickCount % 21) == 20){
@@ -339,6 +336,7 @@ void mazda3BKLCDPrint(DeviceState *settings, char inStr[], uint8_t extras1,
 char guessGear(VehicleData carState){
   char retval;
   int ratio;
+  int last;
 
   if (carState.gearReverse){
     retval = 'R';
@@ -361,6 +359,13 @@ char guessGear(VehicleData carState){
     }
   }
 
+  if (retval == 'R'){
+    digitalWrite(A0,LOW);
+    last = LOW;
+  } else {
+    digitalWrite(A0,HIGH);
+    last = HIGH;
+  }
   return(retval);
 }
 
